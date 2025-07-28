@@ -1,8 +1,14 @@
+// This file currently handles all diagnosis-related endpoints.
+// In a production HealthTech system, these could be separated into:
+// - routes/diagnoses.js
+// - routes/summaries.js
+// - routes/notes.js
+// This allows for domain-based scaling as features grow.
+
 import express from 'express';
 import { getDatabase } from '../config/database.js';
 
 const router = express.Router();
-
 /**
  * @swagger
  * components:

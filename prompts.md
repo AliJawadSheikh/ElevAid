@@ -1,5 +1,7 @@
 # ElevAid Project - Prompt History
 
+> Note: While this is a small simulation, the backend was structured with scalable, domain-driven design in mind — mirroring real-world HealthTech APIs.
+
 This document logs all prompts and responses used in the development of the ElevAid Express.js backend project.
 
 ## Project Setup

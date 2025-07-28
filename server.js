@@ -1,3 +1,6 @@
+// All API routes are imported from routes/records.js for now.
+// In future, this can be modularized using Express routers per domain (e.g., patients, summaries).
+
 import express from 'express';
 import cors from 'cors';
 import swaggerJsdoc from 'swagger-jsdoc';
