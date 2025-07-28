@@ -10,6 +10,9 @@ A modern Express.js backend API built with ES modules, SQLite database, and comp
 - 📚 **Swagger/OpenAPI** documentation
 - 🔧 **Body-parser** middleware for JSON and URL-encoded data
 - 🛡️ **Error handling** and graceful shutdown
+- 🔐 **API Token Authentication** for secure access
+- ⚡ **Rate Limiting** to prevent abuse
+- 🛡️ **Security Headers** with Helmet
 
 ## Prerequisites
 
@@ -34,6 +37,29 @@ npm install
 npm run dev
 ```
 
+## Authentication
+
+All API endpoints require authentication using an API token.
+
+### API Token
+- **Token**: `elevaid-secure-token-2025`
+- **Header**: `Authorization: Bearer elevaid-secure-token-2025`
+
+### Example Usage
+```bash
+curl -H "Authorization: Bearer elevaid-secure-token-2025" \
+     http://localhost:3000/api/problems/active
+```
+
+## Rate Limiting
+
+The API implements rate limiting to prevent abuse:
+
+- **General API**: 100 requests per 15 minutes
+- **Upload operations**: 10 requests per 15 minutes
+- **Search operations**: 30 requests per 5 minutes
+- **AI Summary**: 5 requests per 10 minutes
+
 ## Available Scripts
 
 - `npm start` - Start the production server
@@ -51,6 +77,13 @@ npm run dev
 - `GET /health` - Health check endpoint
 - `GET /api` - API version and endpoint information
 - `GET /api-docs` - Swagger documentation UI
+
+### Protected Endpoints (Require Authentication)
+- `POST /api/upload-record` - Create new medical record
+- `GET /api/problems/active` - Get active problems
+- `GET /api/problems/resolved` - Get resolved problems
+- `GET /api/problem-summary/:id` - Get AI summary of a problem
+- `GET /api/problems/search` - Search problems by diagnosis or note
 
 ## Database
 
@@ -70,6 +103,15 @@ Swagger documentation is available at `/api-docs` when the server is running. Th
 - Request/response examples
 - Schema definitions
 - Try-it-out functionality
+- Authentication configuration
+
+## Security Features
+
+- **API Token Authentication**: All endpoints require valid API token
+- **Rate Limiting**: Prevents abuse and DDoS attacks
+- **Security Headers**: Helmet.js for additional security
+- **Input Validation**: Comprehensive validation for all inputs
+- **Error Handling**: Secure error responses without sensitive data
 
 ## Project Structure
 
@@ -78,11 +120,16 @@ ElevAid/
 ├── server.js              # Main server file
 ├── package.json           # Dependencies and scripts
 ├── config/
-│   └── database.js        # Database configuration
+│   ├── database.js        # Database configuration
+│   ├── auth.js            # Authentication configuration
+│   └── rateLimit.js       # Rate limiting configuration
 ├── routes/
-│   └── index.js           # API routes
+│   ├── index.js           # Basic API routes
+│   └── records.js         # Records management routes
 ├── database.sqlite        # SQLite database (created on first run)
-└── README.md              # This file
+├── README.md              # This file
+├── prompts.md             # Development prompt history
+└── api-diagrams.md        # API sequence diagrams
 ```
 
 ## Development
@@ -92,11 +139,15 @@ ElevAid/
 1. Create a new route file in the `routes/` directory
 2. Import and use the router in `server.js`
 3. Add Swagger documentation comments to your endpoints
+4. Apply appropriate rate limiting middleware
 
 ### Example Route Structure
 
 ```javascript
 import express from 'express';
+import { validateToken } from '../config/auth.js';
+import { generalLimiter } from '../config/rateLimit.js';
+
 const router = express.Router();
 
 /**
@@ -104,11 +155,13 @@ const router = express.Router();
  * /api/example:
  *   get:
  *     summary: Example endpoint
+ *     security:
+ *       - ApiKeyAuth: []
  *     responses:
  *       200:
  *         description: Success
  */
-router.get('/example', (req, res) => {
+router.get('/example', generalLimiter, (req, res) => {
   res.json({ message: 'Example response' });
 });
 
@@ -125,6 +178,9 @@ The application includes comprehensive error handling:
 
 - 404 errors for non-existent routes
 - 500 errors for server errors
+- 401 errors for missing authentication
+- 403 errors for invalid tokens
+- 429 errors for rate limit exceeded
 - Graceful shutdown on SIGINT
 
 ## Contributing

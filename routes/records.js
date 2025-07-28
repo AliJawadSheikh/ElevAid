@@ -7,6 +7,7 @@
 
 import express from 'express';
 import { getDatabase } from '../config/database.js';
+import { uploadLimiter, searchLimiter, aiSummaryLimiter } from '../config/rateLimit.js';
 
 const router = express.Router();
 /**
@@ -65,6 +66,8 @@ const router = express.Router();
  *     summary: Upload a new medical record
  *     description: Creates a new record in the database with diagnosis, status, and note
  *     tags: [Records]
+ *     security:
+ *       - ApiKeyAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -84,6 +87,24 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
@@ -91,7 +112,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/upload-record', (req, res) => {
+router.post('/upload-record', uploadLimiter, (req, res) => {
   try {
     const { diagnosis, status, note } = req.body;
 
@@ -179,6 +200,8 @@ router.post('/upload-record', (req, res) => {
  *     summary: Get all active problems
  *     description: Retrieves all records with status "active" and returns their ID and diagnosis
  *     tags: [Records]
+ *     security:
+ *       - ApiKeyAuth: []
  *     responses:
  *       200:
  *         description: Active problems retrieved successfully
@@ -186,6 +209,24 @@ router.post('/upload-record', (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ActiveProblemsResponse'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
@@ -263,6 +304,8 @@ router.get('/problems/active', (req, res) => {
  *     summary: Get all resolved problems
  *     description: Retrieves all records with status "resolved" and returns their ID and diagnosis
  *     tags: [Records]
+ *     security:
+ *       - ApiKeyAuth: []
  *     responses:
  *       200:
  *         description: Resolved problems retrieved successfully
@@ -270,6 +313,24 @@ router.get('/problems/active', (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ResolvedProblemsResponse'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
@@ -341,6 +402,8 @@ router.get('/problems/resolved', (req, res) => {
  *     summary: Get AI summary of a problem
  *     description: Retrieves a record by ID and generates an AI summary of the note in layman terms
  *     tags: [Records]
+ *     security:
+ *       - ApiKeyAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -356,8 +419,32 @@ router.get('/problems/resolved', (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ProblemSummaryResponse'
+ *       400:
+ *         description: Invalid ID parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Record not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Rate limit exceeded
  *         content:
  *           application/json:
  *             schema:
@@ -369,7 +456,7 @@ router.get('/problems/resolved', (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/problem-summary/:id', async (req, res) => {
+router.get('/problem-summary/:id', aiSummaryLimiter, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -505,6 +592,8 @@ async function generateAISummary(note) {
  *     summary: Search problems by diagnosis or note
  *     description: Searches all records for the given query term in diagnosis or note fields (case-insensitive)
  *     tags: [Records]
+ *     security:
+ *       - ApiKeyAuth: []
  *     parameters:
  *       - in: query
  *         name: q
@@ -526,6 +615,24 @@ async function generateAISummary(note) {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Server error
  *         content:
@@ -533,7 +640,7 @@ async function generateAISummary(note) {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/problems/search', (req, res) => {
+router.get('/problems/search', searchLimiter, (req, res) => {
   try {
     const { q } = req.query;
 

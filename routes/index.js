@@ -8,6 +8,8 @@ const router = express.Router();
  *   get:
  *     summary: API information
  *     description: Returns basic information about the API
+ *     security:
+ *       - ApiKeyAuth: []
  *     responses:
  *       200:
  *         description: API information
@@ -22,6 +24,24 @@ const router = express.Router();
  *                 version:
  *                   type: string
  *                   example: "1.0.0"
+ *       401:
+ *         description: Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/', (req, res) => {
   res.json({

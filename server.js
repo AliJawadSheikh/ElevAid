@@ -3,11 +3,14 @@
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { validateToken, swaggerAuthConfig } from './config/auth.js';
+import { generalLimiter } from './config/rateLimit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,10 +18,16 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Security middleware
+app.use(helmet());
+
+// CORS and body parsing middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting middleware
+app.use(generalLimiter);
 
 // Database setup
 import { initDatabase } from './config/database.js';
@@ -31,7 +40,7 @@ const swaggerOptions = {
     info: {
       title: 'ElevAid API',
       version: '1.0.0',
-      description: 'ElevAid backend API documentation',
+      description: 'ElevAid backend API documentation - Authentication required for all endpoints',
       contact: {
         name: 'API Support',
         email: 'support@elevaid.com'
@@ -41,6 +50,21 @@ const swaggerOptions = {
       {
         url: `http://localhost:${PORT}`,
         description: 'Development server'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        ApiKeyAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'Authorization',
+          description: 'API token for authentication. Use format: Bearer elevaid-secure-token-2025'
+        }
+      }
+    },
+    security: [
+      {
+        ApiKeyAuth: []
       }
     ]
   },
@@ -56,9 +80,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 import apiRoutes from './routes/index.js';
 import recordsRoutes from './routes/records.js';
 
-// Use routes
-app.use('/api', apiRoutes);
-app.use('/api', recordsRoutes);
+// Apply authentication to all API routes
+app.use('/api', validateToken, apiRoutes);
+app.use('/api', validateToken, recordsRoutes);
 
 // Basic health check endpoint
 /**
